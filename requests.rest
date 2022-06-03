@@ -1,12 +1,15 @@
 ###getAll
 GET http://localhost:3003/api/blogs
 
+###findById
+GET http://localhost:3003/api/blogs/6299cb4eb6c892c92bd3eb6e
+
 ###createOne
 POST http://localhost:3003/api/blogs
 Content-Type: application/json
 
 {
-    "title": "test blog",
+    "title": "test blog3",
     "author": "test_user",
     "url": "https://sherifdeenadebayo.com",
     "likes": 600
