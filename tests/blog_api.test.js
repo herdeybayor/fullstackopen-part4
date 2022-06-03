@@ -58,6 +58,14 @@ test("a blog with no likes is defaulted to zero", async () => {
   expect(response.body.likes).toBe(0);
 });
 
+test("missing properties returns 400 Bad Request", async () => {
+  const badBlog = {
+    author: "Bad Author",
+  };
+
+  await api.post("/api/blogs").send(badBlog).expect(400);
+});
+
 afterAll(() => {
   mongoose.connection.close();
 });
