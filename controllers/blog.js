@@ -1,12 +1,12 @@
-const blogRouter = require("express").Router();
+const blogsRouter = require("express").Router();
 const Blog = require("../models/blog");
 
-blogRouter.get("/", async (req, res) => {
+blogsRouter.get("/", async (req, res) => {
   const blogs = await Blog.find({});
   res.send(blogs);
 });
 
-blogRouter.post("/", async (req, res) => {
+blogsRouter.post("/", async (req, res) => {
   const { title, author, url, likes } = req.body;
   const blog = new Blog({ title, author, url, likes });
 
@@ -14,7 +14,7 @@ blogRouter.post("/", async (req, res) => {
   res.status(201).json(savedBlog);
 });
 
-blogRouter.get("/:id", async (req, res) => {
+blogsRouter.get("/:id", async (req, res) => {
   const { id } = req.params;
   const blog = await Blog.findById(id);
 
@@ -25,13 +25,13 @@ blogRouter.get("/:id", async (req, res) => {
   }
 });
 
-blogRouter.delete("/:id", async (req, res) => {
+blogsRouter.delete("/:id", async (req, res) => {
   const { id } = req.params;
   await Blog.findByIdAndDelete(id);
   res.status(204).end();
 });
 
-blogRouter.put("/:id", async (req, res) => {
+blogsRouter.put("/:id", async (req, res) => {
   const { id } = req.params;
   const { title, likes, author, url } = req.body;
 
@@ -53,4 +53,4 @@ blogRouter.put("/:id", async (req, res) => {
   res.json(updatedBlog);
 });
 
-module.exports = blogRouter;
+module.exports = blogsRouter;
