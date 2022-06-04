@@ -1,16 +1,32 @@
 const blogsRouter = require("express").Router();
 const Blog = require("../models/blog");
+const User = require("../models/user");
 
 blogsRouter.get("/", async (req, res) => {
-  const blogs = await Blog.find({});
+  const blogs = await Blog.find({}).populate("user", { username: 1, name: 1 });
   res.send(blogs);
 });
 
 blogsRouter.post("/", async (req, res) => {
-  const { title, author, url, likes } = req.body;
-  const blog = new Blog({ title, author, url, likes });
+  const { title, author, url, likes, userId } = req.body;
 
+  // get user
+  const user = await User.findById(userId);
+
+  if (!user) return res.status(200).json({ error: "userId is required" });
+
+  // creating a new blog
+  const blog = new Blog({ title, author, url, likes, user: user._id });
+
+  // saving new blog
   const savedBlog = await blog.save();
+
+  // updating user blogs
+  user.blogs = [...user.blogs, savedBlog._id];
+
+  // saving user
+  await user.save();
+
   res.status(201).json(savedBlog);
 });
 
