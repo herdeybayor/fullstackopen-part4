@@ -1,5 +1,11 @@
 const Blog = require("../models/blog");
 
+const userInfo = {
+  username: "test_user",
+  password: "test",
+  name: "Elon Musk",
+};
+
 const initialBlogs = [
   {
     id: "5a422a851b54a676234d17f7",
@@ -88,8 +94,8 @@ const nonExistingId = async () => {
 };
 
 const blogsInDb = async () => {
-  const blogs = await Blog.find({});
+  const blogs = await Blog.find({}).populate("user", { username: 1, name: 1 });
   return blogs.map((blog) => blog.toJSON());
 };
 
-module.exports = { initialBlogs, blogsInDb, nonExistingId };
+module.exports = { initialBlogs, blogsInDb, nonExistingId, userInfo };

@@ -6,9 +6,28 @@ const api = supertest(app);
 
 const Blog = require("../models/blog");
 const helper = require("./test_helper");
+const User = require("../models/user");
+const blog = require("../models/blog");
+
+let token = "";
+
+beforeAll(async () => {
+  await User.deleteMany({});
+  await api.post("/api/users").send(helper.userInfo);
+  const response = await api.post("/api/login").send(helper.userInfo);
+  token = response.body.token;
+});
+
 beforeEach(async () => {
   await Blog.deleteMany({});
-  await Blog.insertMany(helper.initialBlogs);
+  const user = await User.findOne({ username: helper.userInfo.username });
+  const blogsToInsert = helper.initialBlogs.map((blog) => {
+    return {
+      ...blog,
+      user: user._id,
+    };
+  });
+  await Blog.insertMany(blogsToInsert);
 });
 
 describe("when there is initially some blogs saved", () => {
@@ -45,6 +64,7 @@ describe("adding a new blog", () => {
     await api
       .post("/api/blogs")
       .send(newBlog)
+      .set("Authorization", `Bearer ${token}`)
       .expect(201)
       .expect("Content-Type", /application\/json/);
 
@@ -53,7 +73,7 @@ describe("adding a new blog", () => {
     expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length + 1);
     const titles = blogsAtEnd.map((blog) => blog.title);
     expect(titles).toContain("Typescript");
-  });
+  }, 100000);
 
   test("with no likes is defaulted to zero", async () => {
     const blogWithNoLikes = {
@@ -62,7 +82,10 @@ describe("adding a new blog", () => {
       url: "http://blog.cleancoder.com/uncle-bob/2016/05/01/TypeWars.html",
     };
 
-    const response = await api.post("/api/blogs").send(blogWithNoLikes);
+    const response = await api
+      .post("/api/blogs")
+      .send(blogWithNoLikes)
+      .set("Authorization", `Bearer ${token}`);
 
     expect(response.body.likes).toBe(0);
   });
@@ -72,7 +95,22 @@ describe("adding a new blog", () => {
       author: "Bad Author",
     };
 
-    await api.post("/api/blogs").send(badBlog).expect(400);
+    await api
+      .post("/api/blogs")
+      .send(badBlog)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(400);
+  });
+
+  test("fails when no token is provided", async () => {
+    const newBlog = {
+      title: "Typescript",
+      author: "Sherifdeen Adebayo",
+      url: "https://sherifdeenadebayo.com",
+      likes: 2,
+    };
+
+    await api.post("/api/blogs").send(newBlog).expect(401);
   });
 });
 
@@ -115,13 +153,20 @@ describe("updating a blog", () => {
       .expect("Content-Type", /application\/json/);
 
     const updatedBlog = response.body;
-    expect(updatedBlog).toEqual({ ...blogToUpdate, ...update });
+    expect(updatedBlog).toEqual({
+      ...blogToUpdate,
+      ...update,
+      user: blogToUpdate.user.id,
+    });
   });
 
   test("fails with a statusCode 400 Bad Request if id is invalid", async () => {
     const invalidId = "123456789";
 
-    await api.put(`/api/blogs/${invalidId}`).expect(400);
+    await api
+      .put(`/api/blogs/${invalidId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(400);
   });
 });
 
@@ -130,7 +175,10 @@ describe("deleting a single blog", () => {
     const blogsAtStart = await helper.blogsInDb();
     const blogToDelete = blogsAtStart[2];
 
-    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204);
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(204);
   });
 });
 
